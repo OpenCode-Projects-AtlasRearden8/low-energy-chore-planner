@@ -1,0 +1,19 @@
+{
+  "name": "low-energy-chore-planner",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ADHD-friendly, no-guilt chore planner sized to your energy. A static PWA with no build step.",
+  "scripts": {
+    "test": "node --test tests/",
+    "verify": "node scripts/verify.js",
+    "icons": "node scripts/make-icons.js"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}

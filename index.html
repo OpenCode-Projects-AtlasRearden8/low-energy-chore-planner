@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" data-theme="default">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Low-Energy Chore Planner</title>
+    <meta name="description" content="An ADHD-friendly, no-guilt chore planner sized to your energy. Pick your spoons, do one tiny thing, and let that count.">
+    <meta name="theme-color" content="#2f7d6d">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="css/styles.css">
+    <script>
+      try {
+        var stored = JSON.parse(localStorage.getItem('lecp-state-v1') || 'null')
+        var hc = stored && typeof stored.highContrast === 'boolean'
+          ? stored.highContrast
+          : window.matchMedia('(prefers-contrast: more)').matches
+        if (hc) document.documentElement.dataset.theme = 'high-contrast'
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="wrap masthead-row">
+        <div>
+          <h1>Low-Energy Chore Planner</h1>
+          <p class="lede">Chores, sized for real life. Pick your energy, do one tiny thing, and let that count.</p>
+        </div>
+        <button type="button" id="settings-btn" class="btn btn-ghost">Settings</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <noscript>
+        <p class="card">This planner needs JavaScript to run. Everything happens on your device, in this browser.</p>
+      </noscript>
+
+      <section class="card" aria-labelledby="energy-heading">
+        <h2 id="energy-heading">Right now</h2>
+        <p id="spoon-line" class="muted">How many spoons do you have today?</p>
+        <div id="energy-buttons" class="energy-buttons" role="group" aria-label="Energy level in spoons">
+          <button type="button" data-action="set-energy" data-value="1" aria-pressed="false">
+            <span class="spoon-count">1 spoon</span>
+            <span class="spoon-label">Running on empty</span>
+          </button>
+          <button type="button" data-action="set-energy" data-value="2" aria-pressed="false">
+            <span class="spoon-count">2 spoons</span>
+            <span class="spoon-label">Low battery</span>
+          </button>
+          <button type="button" data-action="set-energy" data-value="3" aria-pressed="false">
+            <span class="spoon-count">3 spoons</span>
+            <span class="spoon-label">Getting by</span>
+          </button>
+          <button type="button" data-action="set-energy" data-value="4" aria-pressed="false">
+            <span class="spoon-count">4 spoons</span>
+            <span class="spoon-label">Pretty okay</span>
+          </button>
+          <button type="button" data-action="set-energy" data-value="5" aria-pressed="false">
+            <span class="spoon-count">5 spoons</span>
+            <span class="spoon-label">Charged up</span>
+          </button>
+        </div>
+        <p id="spent-line" class="spent-line muted" hidden></p>
+      </section>
+
+      <section class="card picker" aria-labelledby="picker-heading">
+        <h2 id="picker-heading">Just one thing</h2>
+        <p class="muted">Do not want to choose? Use the picker. It only suggests tasks that fit today's spoons, and it favors the tiniest ones.</p>
+        <button type="button" id="pick-btn" data-action="pick" class="btn btn-primary">Pick one for me</button>
+        <div id="picker-result" class="picked-card" hidden>
+          <p class="picked-kicker">Try this:</p>
+          <p id="picked-title" class="picked-title"></p>
+          <p id="picked-cost" class="picked-cost"></p>
+          <p id="picked-note" class="muted" hidden></p>
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" data-action="picked-done">Done it</button>
+            <button type="button" class="btn btn-ghost" data-action="pick-again">No thanks, spin again</button>
+          </div>
+        </div>
+        <p id="picker-empty" class="muted" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="fits-heading">
+        <h2 id="fits-heading">Fits right now</h2>
+        <p id="fits-note" class="muted"></p>
+        <ul id="fits-list" class="task-list"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="all-heading">
+        <h2 id="all-heading">All the tiny things</h2>
+        <form id="add-form" class="add-form" aria-label="Add a tiny task">
+          <label for="add-title">Add a tiny task</label>
+          <input id="add-title" name="title" type="text" maxlength="120" autocomplete="off" placeholder="Wipe the kitchen sink">
+          <p class="hint muted">One-sitting small. &ldquo;Wipe the sink&rdquo; beats &ldquo;clean the bathroom.&rdquo;</p>
+          <div class="add-controls">
+            <button type="button" id="make-smaller-btn" class="btn btn-ghost btn-small">Make it smaller</button>
+          </div>
+          <label for="add-note">Note (optional)</label>
+          <input id="add-note" name="note" type="text" maxlength="280" autocomplete="off" placeholder="Detail, encouragement, or a boundary">
+          <fieldset class="cost-picker">
+            <legend>Effort</legend>
+            <label><input type="radio" name="add-cost" value="1" checked> <span>Tiny</span></label>
+            <label><input type="radio" name="add-cost" value="2"> <span>Small</span></label>
+            <label><input type="radio" name="add-cost" value="3"> <span>Medium-ish</span></label>
+          </fieldset>
+          <button type="submit" class="btn btn-primary">Add it</button>
+        </form>
+        <div id="task-groups"></div>
+        <details id="archived-details" class="archived" hidden>
+          <summary>Archived tasks (<span id="archived-count">0</span>)</summary>
+          <ul id="archived-list" class="task-list"></ul>
+        </details>
+      </section>
+
+      <section class="card" aria-labelledby="progress-heading">
+        <h2 id="progress-heading">Your gentle wins</h2>
+        <p class="muted">No streaks, no flames, no guilt. A win is a win, even on a hard day, and empty days are rest days, not failures.</p>
+        <div class="win-stats">
+          <p id="week-wins" class="win-week"></p>
+          <p id="all-wins" class="win-all muted"></p>
+        </div>
+        <ul id="day-strip" class="day-strip"></ul>
+        <p class="muted legend">Last two weeks &mdash; filled dots are days with wins.</p>
+      </section>
+    </main>
+
+    <footer class="wrap foot">
+      <p>Built by <strong>Asdale Dynamics, LLC</strong> &mdash; beginner-friendly tools, explained like a friend would.</p>
+      <p class="muted">This is a life-admin helper, not medical advice. Everything is stored only on this device: no accounts, no tracking, no server.</p>
+    </footer>
+
+    <dialog id="settings-dialog" class="settings" aria-labelledby="settings-heading">
+      <form method="dialog">
+        <h2 id="settings-heading">Settings</h2>
+        <label class="toggle-row">
+          <input type="checkbox" id="hc-toggle">
+          <span>High-contrast mode (stronger colors for low vision and bright rooms)</span>
+        </label>
+        <div class="settings-actions">
+          <button type="button" class="btn btn-ghost" data-action="remove-samples">Remove the sample tasks</button>
+          <button type="button" class="btn btn-ghost" data-action="export">Back up my tasks (download a file)</button>
+          <button type="button" class="btn btn-ghost" data-action="import">Restore a backup file</button>
+          <button type="button" class="btn btn-danger" data-action="erase">Erase everything</button>
+        </div>
+        <input type="file" id="import-input" accept="application/json,.json" hidden>
+        <div class="action-row">
+          <button type="button" id="close-settings" class="btn btn-primary" data-action="close-settings">Done</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="erase-dialog" aria-labelledby="erase-heading">
+      <form method="dialog">
+        <h2 id="erase-heading">Erase everything?</h2>
+        <p>Your tasks, history and settings are stored only on this device and cannot be recovered. Fresh sample tasks will come back.</p>
+        <div class="action-row">
+          <button type="button" class="btn btn-danger" data-action="erase-confirmed">Erase all</button>
+          <button type="button" class="btn btn-ghost" data-action="erase-cancel">Keep my stuff</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
